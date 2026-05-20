@@ -42,15 +42,15 @@
 			</geometry>
 			</collision-->
 		<visual>
-		<origin xyz="0.6385 -0.1655 0.77"/>
+		<origin xyz="0.6385 -0.1655 0.765"/>
 		<geometry>
-			<box size="0.3 0.3 0.02"/>
+			<box size="0.3 0.3 0.01"/>
 		</geometry>
 		</visual>
 		<collision>
-		<origin xyz="0.6385 -0.1655 0.77"/>
+		<origin xyz="0.6385 -0.1655 0.765"/>
 		<geometry>
-			<box size="0.3 0.3 0.02"/>
+			<box size="0.3 0.3 0.01"/>
 		</geometry>
 		</collision>
 	</link>
@@ -122,7 +122,7 @@
 		<child link="support_link"/>
 	</joint>
 	<joint name="support_joint" type="fixed">
-		<origin rpy="0 0 3.14156" xyz="0.568 -0.1655 .78"/>
+		<origin rpy="0 0 3.14156" xyz="0.568 -0.1655 .77"/>
 		<parent link="support_link"/>
 		<child link="fer_link0"/>
 	</joint>
