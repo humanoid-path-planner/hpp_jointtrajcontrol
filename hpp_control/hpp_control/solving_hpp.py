@@ -329,7 +329,14 @@ class HPPSimple(Node):
 
     async def checkGrasps(self, goal_handle):
         self.setupHPP()
-        valid_grasps = self.checkValidGrasp(goal_handle.request.grasps, goal_handle.request.q_init.position.tolist())
+        if len(goal_handle.request.q_init.name) > 0:
+            q_init = self.jointstate_to_ordered_positions(goal_handle.request.q_init)
+        else:
+            q_init = goal_handle.request.q_init.position.tolist()
+        valid_grasps = self.checkValidGrasp(
+            goal_handle.request.grasps,
+            self.setGripperValue(q_init),
+        )
 
         response = TestGrasp.Result()
         response.valid_grasps = [list_to_pose(p) for p in valid_grasps]
@@ -412,15 +419,16 @@ class HPPSimple(Node):
                 if not res_pre:
                     continue
 
-                res_grasp, q_grasp = solverGrasp.apply(q_pre)
+                for _ in range(100):
+                    res_grasp, q_grasp = solverGrasp.apply(q_pre)
 
-                if res_grasp:
-
-                    if self.verifyConfig(q_grasp):
-
+                    if res_grasp and self.verifyConfig(q_grasp):
                         self.get_logger().info("Grasp valid")
                         out.append(pose)
                         break
+
+                if res_grasp and self.verifyConfig(q_grasp):
+                    break
 
             else:
                 self.get_logger().warn("Grasp Invalid")
@@ -629,5 +637,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-
-
