@@ -112,7 +112,7 @@ class HPPSimple(Node):
         )
 
         self.action_grasp = ActionServer(
-            self, 
+            self,
             TestGrasp, 
             "/hpp_node/check_grasps",
             execute_callback=self.checkGrasps,
@@ -266,9 +266,6 @@ class HPPSimple(Node):
                 self.pose_goal.orientation.w
                 ]
 
-        self.get_logger().info(f"pose: {pose}")
-        self.get_logger().info(f"q_init : {q_init}")
-
         res, self.q_goal, q2 = self.computeConfigFromPose(q_init, pose, freedom=self.degrees, pre_grasp=goal_handle.request.should_pre_grasp)
 
         response = PoseSolve.Result()
@@ -285,9 +282,10 @@ class HPPSimple(Node):
                     res = await self.solve(send=False)
                     if res:
                         self.ps.concatenatePath(3,7)
+                        self.get_logger().info(f"Config found for {pose}")
                         response.success = await self.sendTrajectory()
         else:
-            self.get_logger().error("No config founded")
+            self.get_logger().error(f"No config founded for {pose}")
             self.action_already_running = False
             goal_handle.abort()
             return response
@@ -341,40 +339,99 @@ class HPPSimple(Node):
 
 
     def checkValidGrasp(self, grasp_list, q_init, nb_try=1000):
-        self.robot.client.manipulation.robot.addHandle('pandas/support_link','moveTo',[0,0,0,0,0,0,1], 0.1, 6*[True])
-        
+        self.robot.client.manipulation.robot.addHandle(
+            'pandas/support_link',
+            'moveTo',
+            [0,0,0,0,0,0,1],
+            0.1,
+            6*[True]
+        )
+
         p = self.ps.client.basic.problem.getProblem()
         r = p.robot()
-        
-        seuil = nb_try // 10
+
+        seuil = 1
         out = []
+
         for pose_msg in grasp_list:
+
             q = q_init.copy()
             pose = pose_to_list(pose_msg)
+
             self.get_logger().info(str(pose))
-            self.robot.client.manipulation.robot.setHandlePositionInJoint("moveTo", pose)
-            self.cg.createGrasp('grasp','pandas/gripper','moveTo')
-            solverGrasp = self.ps.client.basic.problem.createConfigProjector(r,'graspSolver', 1e-6, 40)
-            constraintGrasp = self.ps.client.basic.problem.getConstraint('grasp')
+
+            self.robot.client.manipulation.robot.setHandlePositionInJoint(
+                "moveTo",
+                pose
+            )
+
+            self.cg.createPreGrasp(
+                'preGrasp',
+                'pandas/gripper',
+                'moveTo'
+            )
+
+            self.cg.createGrasp(
+                'grasp',
+                'pandas/gripper',
+                'moveTo'
+            )
+
+            solverPreGrasp = self.ps.client.basic.problem.createConfigProjector(
+                r,
+                'preGraspSolver',
+                1e-4,
+                40
+            )
+
+            solverGrasp = self.ps.client.basic.problem.createConfigProjector(
+                r,
+                'graspSolver',
+                1e-4,
+                40
+            )
+
+            constraintPreGrasp = self.ps.client.basic.problem.getConstraint(
+                'preGrasp'
+            )
+
+            constraintGrasp = self.ps.client.basic.problem.getConstraint(
+                'grasp'
+            )
+
+            solverPreGrasp.add(constraintPreGrasp, 1)
             solverGrasp.add(constraintGrasp, 1)
+
             for i in range(nb_try):
+
                 if i >= seuil:
                     q = self.robot.shootRandomConfig()
-                res, q1 = solverGrasp.apply(q)
-                
-                if res:
-                    if self.verifyConfig(q1):
+
+                res_pre, q_pre = solverPreGrasp.apply(q)
+
+                if not res_pre:
+                    continue
+
+                res_grasp, q_grasp = solverGrasp.apply(q_pre)
+
+                if res_grasp:
+
+                    if self.verifyConfig(q_grasp):
+
                         self.get_logger().info("Grasp valid")
                         out.append(pose)
                         break
+
             else:
                 self.get_logger().warn("Grasp Invalid")
 
-            if len(out) > 4:
+            solverPreGrasp.deleteThis()
+            solverGrasp.deleteThis()
+
+            if len(out) > 2:
                 break
-        
+
         p.deleteThis()
-        solverGrasp.deleteThis()
 
         return out
 

@@ -76,10 +76,6 @@ q_init = robot.getCurrentConfig()
 q_init[0:9] = [ 0.0011392894365677708, -0.785233599521887, 0.0006221224673022915, -2.373483112932502, 
                 0.003281429835572088, 1.559707000546985, 0.7660253966665929, 0.035, 0.035]
 # q_init[:7] = getRobotState().position
-q_goal = q_init[::]
-q_goal[0] = 1.5
-
-
 
 # CONTAINER 1
 # ros2 topic pub --once /hpp_node/fast_plan_to_q sensor_msgs/msg/JointState "
@@ -167,12 +163,10 @@ factory.generate()
 
 cg.initialize()
 
-pose = [0.6, 0.5, 1, 0, sqrt(2)/2, 0, sqrt(2)/2]
-pose = [-0.04, -0.0067, 0.944, 0.11265219600313102, 0.6136445980076074, -0.04318254366743604, 0.78031087266157645]
-q5 = [-1.3264918647926258, 1.6746599999999998, 1.875746167904203, -1.7537094897683982, -1.6126423928878681, 1.2425631072395829, -1.8965544772046639, 0.015060742839733484, 0.0039385689627093115]
+# pose = [0.0, 0.0, 0.792, 0, sqrt(2)/2, 0, sqrt(2)/2]
+pose = [-0.0050984488800168044, -0.06047784388065338, 0.9113497513532639, 0.35241367100727217, 0.6124972800785686, -0.47200842090149775, 0.5271240242880307]
 
 robot.client.manipulation.robot.addHandle('pandas/support_link','moveTo',pose, 0.1, [True, True, True, True, True, True])
-print(pose)
 
 #robot.client.manipulation.robot.setHandlePositionInJoint('moveTo',pose)
 cg.createPreGrasp('preGrasp', 'pandas/gripper','moveTo') # grasp et projeter comme avec mplib
@@ -193,7 +187,7 @@ solverPreGrasp.add(constraintPreGrasp, 1)
 
 for i in range(1000):
     q = robot.shootRandomConfig()
-    if i<=500:
+    if i<=1:
         q = q_init
     res, q1 = solverPreGrasp.apply(q)
     if res:
@@ -212,7 +206,6 @@ print(f"{res} in {i}")
 p.deleteThis()
 solverPreGrasp.deleteThis()
 solverGrasp.deleteThis()
-
 ps.setInitialConfig(q_init)
 ps.addGoalConfig(q1)
 
