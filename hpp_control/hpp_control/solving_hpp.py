@@ -188,8 +188,8 @@ class HPPSimple(Node):
 
         self.ps.createLockedJoint('locked_finger_1', f'pandas/{self.arm_id}_finger_joint1', [0.035])
         self.ps.createLockedJoint('locked_finger_2', f'pandas/{self.arm_id}_finger_joint2', [0.035])
-        self.ps.setConstantRightHandSide('locked_finger_1', False)
-        self.ps.setConstantRightHandSide('locked_finger_2', False)
+        self.ps.setConstantRightHandSide('locked_finger_1', True)
+        self.ps.setConstantRightHandSide('locked_finger_2', True)
 
         
         self.ps.addPathOptimizer('SimpleShortcut')
@@ -346,64 +346,64 @@ class HPPSimple(Node):
 
 
     def checkValidGrasp(self, grasp_list, q_init, nb_try=500):
-        self.robot.client.manipulation.robot.addHandle(
-            'pandas/support_link',
-            'moveTo',
-            [0,0,0,0,0,0,1],
-            0.1,
-            6*[True]
-        )
-
         p = self.ps.client.basic.problem.getProblem()
         r = p.robot()
 
         seuil = 1
         out = []
 
-        for pose_msg in grasp_list:
+        for grasp_id, pose_msg in enumerate(grasp_list):
 
             q = q_init.copy()
             pose = pose_to_list(pose_msg)
+            handle_name = f"moveTo_{grasp_id}"
+            pre_grasp_name = f"preGrasp_{grasp_id}"
+            grasp_name = f"grasp_{grasp_id}"
+            pre_grasp_solver_name = f"preGraspSolver_{grasp_id}"
+            grasp_solver_name = f"graspSolver_{grasp_id}"
 
             self.get_logger().info(str(pose))
 
-            self.robot.client.manipulation.robot.setHandlePositionInJoint(
-                "moveTo",
-                pose
+            self.robot.client.manipulation.robot.addHandle(
+                'pandas/support_link',
+                handle_name,
+                pose,
+                0.1,
+                6*[True]
             )
 
             self.cg.createPreGrasp(
-                'preGrasp',
+                pre_grasp_name,
                 'pandas/gripper',
-                'moveTo'
+                handle_name
             )
 
             self.cg.createGrasp(
-                'grasp',
+                grasp_name,
                 'pandas/gripper',
-                'moveTo'
+                handle_name
             )
 
             solverPreGrasp = self.ps.client.basic.problem.createConfigProjector(
                 r,
-                'preGraspSolver',
+                pre_grasp_solver_name,
                 1e-6,
                 40
             )
 
             solverGrasp = self.ps.client.basic.problem.createConfigProjector(
                 r,
-                'graspSolver',
+                grasp_solver_name,
                 1e-6,
                 40
             )
 
             constraintPreGrasp = self.ps.client.basic.problem.getConstraint(
-                'preGrasp'
+                pre_grasp_name
             )
 
             constraintGrasp = self.ps.client.basic.problem.getConstraint(
-                'grasp'
+                grasp_name
             )
 
             solverPreGrasp.add(constraintPreGrasp, 1)
