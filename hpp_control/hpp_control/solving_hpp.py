@@ -345,7 +345,7 @@ class HPPSimple(Node):
         return response
 
 
-    def checkValidGrasp(self, grasp_list, q_init, nb_try=1000):
+    def checkValidGrasp(self, grasp_list, q_init, nb_try=500):
         self.robot.client.manipulation.robot.addHandle(
             'pandas/support_link',
             'moveTo',
@@ -387,14 +387,14 @@ class HPPSimple(Node):
             solverPreGrasp = self.ps.client.basic.problem.createConfigProjector(
                 r,
                 'preGraspSolver',
-                1e-4,
+                1e-6,
                 40
             )
 
             solverGrasp = self.ps.client.basic.problem.createConfigProjector(
                 r,
                 'graspSolver',
-                1e-4,
+                1e-6,
                 40
             )
 
@@ -419,7 +419,7 @@ class HPPSimple(Node):
                 if not res_pre:
                     continue
 
-                for _ in range(100):
+                for _ in range(200):
                     res_grasp, q_grasp = solverGrasp.apply(q_pre)
 
                     if res_grasp and self.verifyConfig(q_grasp):

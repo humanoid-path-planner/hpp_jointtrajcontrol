@@ -75,7 +75,6 @@ ps.setTimeOutPathPlanning(10)
 q_init = robot.getCurrentConfig()
 q_init[0:9] = [ 0.0011392894365677708, -0.785233599521887, 0.0006221224673022915, -2.373483112932502, 
                 0.003281429835572088, 1.559707000546985, 0.7660253966665929, 0.035, 0.035]
-# q_init[:7] = getRobotState().position
 
 # CONTAINER 1
 # ros2 topic pub --once /hpp_node/fast_plan_to_q sensor_msgs/msg/JointState "
@@ -164,7 +163,8 @@ factory.generate()
 cg.initialize()
 
 # pose = [0.0, 0.0, 0.792, 0, sqrt(2)/2, 0, sqrt(2)/2]
-pose = [-0.0050984488800168044, -0.06047784388065338, 0.9113497513532639, 0.35241367100727217, 0.6124972800785686, -0.47200842090149775, 0.5271240242880307]
+# q_init[:7] = getRobotState().position
+pose = [0.06930827125906944, -0.06272878199815751, 0.8093290972709656, -0.696237143183549, 0.5611202802469678, 0.385382596201568, 0.22776770203897137]
 
 robot.client.manipulation.robot.addHandle('pandas/support_link','moveTo',pose, 0.1, [True, True, True, True, True, True])
 
